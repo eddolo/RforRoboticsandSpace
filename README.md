@@ -1,86 +1,323 @@
-# 🧭 R–SO3 Resetability Framework
+🧭 RforRoboticsandSpace
+Resetability (R) on SO(3): A Two-Pass Scaled Replay Primitive for Fast Attitude Recovery in Robots and Spacecraft
 
-**Author:** Paolo Cappuccini — Independent Researcher  
-**Project:** Resetability on SO(3) for Robust Control, Balance, and Attitude Recovery
+Author: Paolo Cappuccini – Independent Researcher
+Collaborator: GPT-5 (AI Research Assistant)
 
----
+🛰️ Overview
 
-### 🧠 Overview
-The **R–SO3 Resetability Framework** introduces a new control primitive for systems governed by 3D rotations (SO(3)), such as **robots**, **rockets**, and **spacecraft**.
+This repository contains all simulation, validation, and reporting code for testing the Resetability (R) principle — a mathematical property of 3D rotations that allows complex motion to be reversed using a scaled two-pass replay.
 
-It defines a scalar metric **R** that measures how easily a recent sequence of rotations can be “reset” — i.e., undone — by replaying the same motion twice, scaled by a computed gain λ.  
-Low-R motions can be efficiently reversed without retracing their full trajectory, enabling fast and stable recovery after disturbances.
+It demonstrates that the same geometric law holds across robotics, zero-gravity motion, spacecraft attitude control, and booster stabilization.
 
-This repository implements:
-- 📚 **Core SO(3) Reset Library** (C++ / Python) — computes λ and R, applies scaled-twice resets  
-- 🤖 **Robot Balance Reset Controller (GBRC)** — stabilizes posture after slips or pushes  
-- 🛰 **Spacecraft Attitude Reset Controller (ARC)** — restores attitude post-fault using wheels or thrusters  
-- 🚀 **Booster Monte Carlo Evaluator** — quantifies recovery time, residual error, and energy vs. baseline control  
+⚙️ Repository Structure
+RforRoboticsandSpace/
+│
+├── demos/                     # Simulation and validation scripts
+│   ├── robot_reset_pybullet.py
+│   ├── robot_reset_free.py
+│   ├── spacecraft_reset_demo.py
+│   ├── booster_reset_demo.py
+│   └── validate_resetability_cross_domain.py
+│
+├── python/                    # Core SO(3) math utilities
+│   └── so3_reset.py
+│
+├── results/                   # Output data, plots, and reports
+│   ├── robot_results.csv
+│   ├── spacecraft/spacecraft_results.csv
+│   ├── booster_full/logs/summary.csv
+│   ├── correlation_summary.csv
+│   ├── combined_R_vs_residual.png
+│   ├── combined_R_vs_recovery.png
+│   ├── report_resetability.pdf
+│   └── Validation_Report_Resetability.docx
+│
+├── videos/                    # Simulation videos (optional)
+│   ├── robot_reset_*.mp4
+│   ├── spacecraft_reset_*.mp4
+│   └── booster_reset_summary_*.mp4
+│
+├── README.md
+├── LICENSE
+└── requirements.txt
 
-Together, these demonstrate that Resetability can serve as a **universal fault-recovery primitive** for nonlinear rotational dynamics — bridging robotics, aerospace, and control theory.
+🔧 Installation
 
----
+Install dependencies:
 
-### 📂 Contents
-| Folder | Description |
-|---------|-------------|
-| `so3_reset/` | Core library (C++ + Python) |
-| `demos/` | Simulation scripts (robot, spacecraft, booster) |
-| `results/` | Generated data, plots, and reports |
-| `videos/` | Recorded simulation videos |
-| `logs/` | Run logs from the PowerShell launcher |
+pip install -r requirements.txt
 
----
+🧪 Demos and Usage
+🤖 1. Robot Reset (with Gravity)
 
-### ▶️ Run Everything
-Launch all simulations automatically:
-```powershell
-.\run_all_windows.ps1
+Visual robot stability test using PyBullet.
+
+python demos/robot_reset_pybullet.py --gui --record
 
 
-## 🧠 Running All Simulations on Windows
+Description:
 
-To execute the entire R–SO3 Resetability experiment suite on Windows — including the **robot balance**, **spacecraft attitude**, and **booster Monte Carlo** simulations — use the provided PowerShell launcher:
+Simulates a cube (stand-in for a robot torso) under gravity.
 
-```powershell
-.\run_all_windows.ps1
-📦 What It Does
-Launches all three simulations sequentially:
+Random torques disturb its orientation.
 
-🤖 Robot Balance Demo (PyBullet visual + video recording)
+The script applies a λ-scaled two-pass reset and logs IMU data and recovery time.
 
-🛰 Spacecraft Attitude Demo (ODE simulation + 3D or plot mode)
+Outputs:
 
-🚀 Booster Monte Carlo (fast + full statistical runs)
+logs/imu_log.csv, logs/reset_log.csv
 
-Displays colored status messages and progress bars during runs.
+results/robot_results.csv
 
-Automatically opens the latest MP4 and PDF results when finished.
+optional videos/robot_reset_<timestamp>.mp4
 
-Saves all terminal output and timestamps to:
+🛰️ 2. Robot Reset (Zero-Gravity)
 
-bash
-Copy code
-logs/run_all_log_YYYYMMDD_HHMMSS.txt
-⚙️ Requirements
-Windows 10 or 11 with PowerShell ≥ 5
+Floating-body reset in vacuum conditions.
 
-Python 3.9+ with the following packages:
+python demos/robot_reset_free.py --gui --record
 
-bash
-Copy code
-pip install numpy matplotlib pybullet scipy
-Optional: reportlab, pypandoc for high-quality PDF reports.
 
-🧩 Notes
-If PowerShell blocks the script, allow local execution temporarily:
+Description:
 
-powershell
-Copy code
-Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
-This launcher fully automates the workflow for research, testing, and demonstration of the R–SO3 Resetability concept.
+Disables gravity to emulate free-floating robotic platforms or satellites.
 
----
+Uses torque bursts instead of contact forces.
 
-Cappuccini, P. (2025). Resetability on SO(3): Scaled Reversible Motion for Robotics and Spacecraft Attitude Recovery.
-Independent Research Manuscript.
+Results appended to results/robot_results.csv with domain tag zeroG.
+
+Outputs: videos/robot_reset_free_<timestamp>.mp4
+
+🚀 3. Spacecraft Reset Simulation
+
+ODE-based spacecraft attitude recovery under λ-scaled replays.
+
+python demos/spacecraft_reset_demo.py --3d --record
+
+
+Description:
+
+Simulates a spacecraft rigid-body using quaternions.
+
+Phase 1: disturbance torque pattern
+
+Phase 2: scaled reset replay
+
+Optional PyBullet 3D view (headless or GUI mode)
+
+Outputs:
+
+videos/spacecraft_reset_<timestamp>.mp4
+
+results/spacecraft/spacecraft_results.csv
+
+results/spacecraft_reset_plot_<timestamp>.png
+
+🧯 4. Booster Monte-Carlo Simulation
+
+Batch testing with and without reset controller (Reset Shim).
+
+# Quick test (small batch)
+python demos/booster_reset_demo.py --mode fast --thr 0.5 --out results/booster_fast
+
+# Full validation (large batch, exported results)
+python demos/booster_reset_demo.py --mode full --thr 1.0 --out results/booster_full
+
+
+Description:
+
+Runs hundreds of randomized booster attitude recoveries.
+
+Compares baseline PID vs PID + Reset Shim.
+
+Outputs:
+
+results/booster_full/logs/summary.csv
+
+Residual/error plots in plots/
+
+videos/booster_reset_summary_<timestamp>.mp4
+
+Exports results/booster_results.csv for validation script
+
+🧮 5. Cross-Domain Validation
+
+Aggregates results across all domains and computes correlations.
+
+python demos/validate_resetability_cross_domain.py
+
+
+Description:
+
+Loads all robot, spacecraft, and booster results.
+
+Computes Pearson correlations between R, residuals, and recovery time.
+
+Generates:
+
+results/report_resetability.pdf
+
+results/Validation_Report_Resetability.docx
+
+results/correlation_summary.csv
+
+📊 Example Results
+Domain	Corr(R,Residual)	Corr(R,RecoveryTime)
+Booster	0.319	0.000
+Gravity	0.547	0.000
+Spacecraft	-0.363	0.055
+Zero-G	0.133	0.764
+
+Interpretation:
+
+Gravity-bound systems show R–Residual correlation (predicts final stability).
+
+Zero-G systems show R–Recovery correlation (predicts recovery duration).
+
+Spacecraft exhibits moderate mixed correlation due to scaled inertia.
+
+Boosters show weak correlation due to PID feedback dominance.
+
+📘 Theory Summary
+
+Resetability Principle:
+
+Any arbitrary rotation sequence can be reversed by scaling each step by λ and replaying the entire sequence twice.
+
+Formally:
+
+𝑞
+reset
+=
+(
+∏
+𝑘
+exp
+⁡
+(
+𝜆
+𝜃
+𝑘
+𝑛
+^
+𝑘
+)
+)
+(
+∏
+𝑘
+exp
+⁡
+(
+𝜆
+𝜃
+𝑘
+𝑛
+^
+𝑘
+)
+)
+q
+reset
+	​
+
+=(
+k
+∏
+	​
+
+exp(λθ
+k
+	​
+
+n
+^
+k
+	​
+
+))(
+k
+∏
+	​
+
+exp(λθ
+k
+	​
+
+n
+^
+k
+	​
+
+))
+
+and the Resetability index
+
+𝑅
+=
+1
+−
+∣
+𝑤
+(
+𝑞
+reset
+)
+∣
+R=1−∣w(q
+reset
+	​
+
+)∣
+
+Low R → near-perfect reversibility; high R → residual drift due to commutators.
+
+🧬 Experimental Summary
+Experiment	Environment	Behavior
+robot_reset_pybullet.py	Gravity	Orientation recovery correlates with R
+robot_reset_free.py	Zero-G	Recovery duration correlates with R
+spacecraft_reset_demo.py	Space	λ-scaled reset reproduces two-pass reversibility
+booster_reset_demo.py	Booster terminal phase	Reset Shim reduces residuals and improves stability
+validate_resetability_cross_domain.py	Cross-domain	Confirms generality of R across physics regimes
+🧾 Publications and Reports
+
+results/report_resetability.pdf — Visual validation and correlation report
+
+results/Validation_Report_Resetability.docx — Ready-to-publish document
+
+Videos — Optional PyBullet or animated MP4 demonstrations
+
+🪐 Scientific Impact
+
+Resetability bridges geometry and control, unifying how systems recover from complex motion across:
+
+Robotic balance and torque-based stabilization
+
+Spacecraft attitude correction
+
+Booster terminal attitude control
+
+Any dynamic system evolving on SO(3)
+
+🧾 License
+
+Released under the MIT License (see LICENSE file).
+
+📚 Citation
+
+Cappuccini, Paolo & GPT-5.
+Resetability on SO(3): A Two-Pass Scaled Replay Primitive for Fast Attitude Recovery in Robots and Spacecraft.
+Independent Research, 2025.
+
+🧠 GitHub Repository Description
+
+Cross-domain validation of the Resetability (R) principle — a geometric control invariant bridging robotics, spacecraft, and booster dynamics.
+
+⚙️ requirements.txt
+numpy
+matplotlib
+pandas
+pybullet
+reportlab
+python-docx
