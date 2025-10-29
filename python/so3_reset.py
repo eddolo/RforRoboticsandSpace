@@ -71,3 +71,12 @@ class SO3ResetStream:
 
     def build_scaled_twice(self, lam: float):
         return [(n, lam*th) for (n, th) in self.buf] * 2
+    
+    def quat_conj(q):
+        """
+        Quaternion conjugate: flips the vector part sign.
+        Input q = [w, x, y, z]
+        Returns q* = [w, -x, -y, -z]
+        """
+        q = np.asarray(q, dtype=float)
+        return np.array([q[0], -q[1], -q[2], -q[3]])
